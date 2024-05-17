@@ -17,7 +17,10 @@ import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
 public class JarLoader {
-    public static final String JAR_FILE_PATTERN  = ".*-(tests|sources)\\.jar$";
+
+    public static final String JAR_PATTERN = ".*\\.jar$";
+    public static final String JAR_EXCLUDE = ".*-(javadoc|test|sources)\\.jar$";
+
     public static void main(String[] args){
         if (args.length < 2) {
             System.err.println("Usage: java JarLoader <lib-directory> <main-class> [parmeters....]");
@@ -42,6 +45,11 @@ public class JarLoader {
     }
 
     private static File extractLibDirectory(String libDir) throws IOException {
+        File jarDir = new File(libDir);
+        if(jarDir.isDirectory())
+            return jarDir;
+
+
         File tempDir = Files.createTempDirectory("tempLib").toFile();
         tempDir.deleteOnExit();
 
@@ -65,13 +73,13 @@ public class JarLoader {
         return tempDir;
     }
 
-    private static List<File> listMatches(File libDir, String filterPattern) throws IOException {
+    private static List<File> listMatches(File libDir, String filterPattern, String filterExclusion) throws IOException {
         Path rootDir = libDir.toPath();
         List<File> ret = new ArrayList<>();
 
         try (Stream<Path> paths = Files.walk(rootDir)) {
             paths.filter(Files::isRegularFile)
-                    .filter(path -> !path.toString().matches(filterPattern))
+                    .filter(path -> path.toString().matches(filterPattern) && !path.toString().matches(filterExclusion) && !path.toString().contains("jar-loader"))
                     .forEach(p -> ret.add(p.toFile()));
         }
 
@@ -79,7 +87,7 @@ public class JarLoader {
     }
 
     private static void loadJars(File libDir) throws IOException {
-        List<File> matches = listMatches(libDir, JAR_FILE_PATTERN);
+        List<File> matches = listMatches(libDir, JAR_PATTERN, JAR_EXCLUDE);
 
 
         File[] jarFiles = matches.toArray(new File[0]);
@@ -91,6 +99,7 @@ public class JarLoader {
             }
             URLClassLoader urlClassLoader = new URLClassLoader(urls, JarLoader.class.getClassLoader());
             Thread.currentThread().setContextClassLoader(urlClassLoader);
+            System.out.println("Jars found:\n" + Arrays.toString(jarFiles));
         }
     }
 
