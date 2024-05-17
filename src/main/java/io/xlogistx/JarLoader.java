@@ -43,7 +43,6 @@ public class JarLoader {
 
     private static File extractLibDirectory(String libDir) throws IOException {
         File tempDir = Files.createTempDirectory("tempLib").toFile();
-        System.out.println(tempDir);
         tempDir.deleteOnExit();
 
         //try (JarFile jarFile = new JarFile(new File(JarLoader.class.getProtectionDomain().getCodeSource().getLocation().getPath()))) {
@@ -52,9 +51,7 @@ public class JarLoader {
                     .filter(e -> /*e.getName().startsWith(libDir + "/") &&*/ e.getName().endsWith(".jar"))
                     .forEach(e -> {
                         try {
-                            System.out.println(e.getName());
                             File outFile = new File(tempDir, e.getName());
-                            System.out.println(outFile);
                             outFile.getParentFile().mkdirs();
                             try (InputStream in = jarFile.getInputStream(e)) {
                                 Files.copy(in, outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -92,7 +89,6 @@ public class JarLoader {
             for (int i = 0; i < jarFiles.length; i++) {
                 urls[i] = jarFiles[i].toURI().toURL();
             }
-            System.out.println(Arrays.toString(urls));
             URLClassLoader urlClassLoader = new URLClassLoader(urls, JarLoader.class.getClassLoader());
             Thread.currentThread().setContextClassLoader(urlClassLoader);
         }
@@ -100,7 +96,6 @@ public class JarLoader {
 
     private static void executeMainClass(String mainClassName, String[] args) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        System.out.println(mainClassName);
         Class<?> mainClass = classLoader.loadClass(mainClassName);
         Method mainMethod = mainClass.getMethod("main", String[].class);
         String[] mainArgs = new String[args.length - 2];
