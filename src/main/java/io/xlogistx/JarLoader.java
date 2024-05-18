@@ -104,9 +104,6 @@ public class JarLoader {
                             Files.createDirectories(memFile.getParent());
                             Files.createFile(memFile);
 
-//                            System.out.println(memFile);
-//                            File outFile = new File(tempDir, e.getName());
-//                            outFile.getParentFile().mkdirs();
                             try (InputStream in = jarFile.getInputStream(e)) {
                                 Files.copy(in, memFile, StandardCopyOption.REPLACE_EXISTING);
                             }
@@ -122,47 +119,9 @@ public class JarLoader {
 
 
 
-
-
-//    public static List<URL> jarsURLs(String jarFilePath) throws IOException {
-//        List<URL> ret = new ArrayList<URL>();
-//        File jarFile = new File(jarFilePath);
-//        Path jarPath = jarFile.toPath();
-//        try (JarFile jar = new JarFile(jarFile)) {
-//            jar.stream()
-//                    .filter(e -> /*e.getName().startsWith(libDir + "/") &&*/ e.getName().endsWith(".jar"))
-//                    .forEach(e -> {
-//                        try
-//                        {
-//                            URL urlOfAJar = getFileURLInJar(jarPath, e.getName());
-//                            System.out.println(urlOfAJar);
-//                            ret.add(urlOfAJar);
-//                        }
-//                        catch (IOException ioe)
-//                        {
-//                            ioe.printStackTrace();
-//                        }
-//                    });
-//        }
-//
-//
-//        return ret;
-//
-//    }
-
-
-//    public static URL getFileURLInJar(Path jarPath, String fileInsideJar) throws IOException {
-//        // Ensure the file exists in the JAR
-//        try (JarFile jarFile = new JarFile(jarPath.toFile())) {
-//            if (jarFile.getEntry(fileInsideJar) != null) {
-//                // Create a URL for the file inside the JAR
-//                return new URL("jar:file:" + jarPath.toUri().getPath() + "!/" + fileInsideJar);
-//            }
-//        }
-//        return null;
-//    }
-
-    private static List<URL> listMatches(Path rootDir, String filterPattern, String filterExclusion) throws IOException {
+    private static List<URL> listMatches(Path rootDir, String filterPattern, String filterExclusion)
+            throws IOException
+    {
 
         List<URL> ret = new ArrayList<>();
 
@@ -171,9 +130,12 @@ public class JarLoader {
                     .filter(path -> path.toString().matches(filterPattern) && !path.toString().matches(filterExclusion) && !path.toString().contains("jar-loader"))
                     .forEach(p ->
                             {
-                                try {
+                                try
+                                {
                                     ret.add(p.toUri().toURL());
-                                } catch (MalformedURLException e) {
+                                }
+                                catch (MalformedURLException e)
+                                {
                                     e.printStackTrace();
                                 }
                             });
@@ -191,11 +153,13 @@ public class JarLoader {
         {
             URLClassLoader urlClassLoader = new URLClassLoader(jarURLs.toArray(new URL[0]), JarLoader.class.getClassLoader());
             Thread.currentThread().setContextClassLoader(urlClassLoader);
-            System.out.println("Jars found:\n" + jarURLs);
+            //System.out.println("Jars found:\n" + jarURLs);
         }
     }
 
-    private static void executeMainClass(String mainClassName, String[] args) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private static void executeMainClass(String mainClassName, String[] args)
+            throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException
+    {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Class<?> mainClass = classLoader.loadClass(mainClassName);
         Method mainMethod = mainClass.getMethod("main", String[].class);
