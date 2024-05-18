@@ -1,17 +1,21 @@
 package io.xlogistx;
 
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
@@ -31,9 +35,9 @@ public class JarLoader {
         String mainClass = args[1];
 
         try {
+            //jarsURLs(libDir);
             // Extract and load JAR files
-            File tempLibDir = extractLibDirectory(libDir);
-            loadJars(tempLibDir);
+            loadJars(libDir);
 
             // Execute the main method of the specified class
             executeMainClass(mainClass, args);
@@ -44,10 +48,14 @@ public class JarLoader {
         }
     }
 
-    private static File extractLibDirectory(String libDir) throws IOException {
+
+
+
+    private static Path extractLibDirectory(String libDir) throws IOException {
+
         File jarDir = new File(libDir);
         if(jarDir.isDirectory())
-            return jarDir;
+            return jarDir.toPath();
 
 
         File tempDir = Files.createTempDirectory("tempLib").toFile();
@@ -65,41 +73,125 @@ public class JarLoader {
                                 Files.copy(in, outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                             }
                         } catch (IOException ex) {
-                            throw new RuntimeException("Failed to extract " + e.getName(), ex);
+                            System.err.println("Failed to extract " + e.getName() +" " + ex);
                         }
                     });
         }
 
-        return tempDir;
+        return tempDir.toPath();
     }
 
-    private static List<File> listMatches(File libDir, String filterPattern, String filterExclusion) throws IOException {
-        Path rootDir = libDir.toPath();
-        List<File> ret = new ArrayList<>();
+    private static Path extractLibDirectoryMemFS(String libDir) throws IOException {
+
+        File jarDir = new File(libDir);
+        if(jarDir.isDirectory())
+            return jarDir.toPath();
+
+        FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
+        Path path = fs.getPath("/temp");
+        Files.createDirectories(path);
+
+
+
+        //try (JarFile jarFile = new JarFile(new File(JarLoader.class.getProtectionDomain().getCodeSource().getLocation().getPath()))) {
+        try (JarFile jarFile = new JarFile(new File(libDir))) {
+            jarFile.stream()
+                    .filter(e -> /*e.getName().startsWith(libDir + "/") &&*/ e.getName().endsWith(".jar"))
+                    .forEach(e -> {
+                        try
+                        {
+                            Path memFile = fs.getPath("/temp/" + e.getName());
+                            Files.createDirectories(memFile.getParent());
+                            Files.createFile(memFile);
+
+//                            System.out.println(memFile);
+//                            File outFile = new File(tempDir, e.getName());
+//                            outFile.getParentFile().mkdirs();
+                            try (InputStream in = jarFile.getInputStream(e)) {
+                                Files.copy(in, memFile, StandardCopyOption.REPLACE_EXISTING);
+                            }
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                            //throw new RuntimeException("Failed to extract " + e.getName(), ex);
+                        }
+                    });
+        }
+
+        return path;
+    }
+
+
+
+
+
+//    public static List<URL> jarsURLs(String jarFilePath) throws IOException {
+//        List<URL> ret = new ArrayList<URL>();
+//        File jarFile = new File(jarFilePath);
+//        Path jarPath = jarFile.toPath();
+//        try (JarFile jar = new JarFile(jarFile)) {
+//            jar.stream()
+//                    .filter(e -> /*e.getName().startsWith(libDir + "/") &&*/ e.getName().endsWith(".jar"))
+//                    .forEach(e -> {
+//                        try
+//                        {
+//                            URL urlOfAJar = getFileURLInJar(jarPath, e.getName());
+//                            System.out.println(urlOfAJar);
+//                            ret.add(urlOfAJar);
+//                        }
+//                        catch (IOException ioe)
+//                        {
+//                            ioe.printStackTrace();
+//                        }
+//                    });
+//        }
+//
+//
+//        return ret;
+//
+//    }
+
+
+//    public static URL getFileURLInJar(Path jarPath, String fileInsideJar) throws IOException {
+//        // Ensure the file exists in the JAR
+//        try (JarFile jarFile = new JarFile(jarPath.toFile())) {
+//            if (jarFile.getEntry(fileInsideJar) != null) {
+//                // Create a URL for the file inside the JAR
+//                return new URL("jar:file:" + jarPath.toUri().getPath() + "!/" + fileInsideJar);
+//            }
+//        }
+//        return null;
+//    }
+
+    private static List<URL> listMatches(Path rootDir, String filterPattern, String filterExclusion) throws IOException {
+
+        List<URL> ret = new ArrayList<>();
 
         try (Stream<Path> paths = Files.walk(rootDir)) {
             paths.filter(Files::isRegularFile)
                     .filter(path -> path.toString().matches(filterPattern) && !path.toString().matches(filterExclusion) && !path.toString().contains("jar-loader"))
-                    .forEach(p -> ret.add(p.toFile()));
+                    .forEach(p ->
+                            {
+                                try {
+                                    ret.add(p.toUri().toURL());
+                                } catch (MalformedURLException e) {
+                                    e.printStackTrace();
+                                }
+                            });
         }
 
         return ret;
     }
 
-    private static void loadJars(File libDir) throws IOException {
-        List<File> matches = listMatches(libDir, JAR_PATTERN, JAR_EXCLUDE);
+    private static void loadJars(String libDirName)
+            throws IOException
+    {
+        List<URL> jarURLs = listMatches(extractLibDirectoryMemFS(libDirName), JAR_PATTERN, JAR_EXCLUDE);
 
-
-        File[] jarFiles = matches.toArray(new File[0]);
-
-        if (jarFiles != null) {
-            URL[] urls = new URL[jarFiles.length];
-            for (int i = 0; i < jarFiles.length; i++) {
-                urls[i] = jarFiles[i].toURI().toURL();
-            }
-            URLClassLoader urlClassLoader = new URLClassLoader(urls, JarLoader.class.getClassLoader());
+        if(!jarURLs.isEmpty())
+        {
+            URLClassLoader urlClassLoader = new URLClassLoader(jarURLs.toArray(new URL[0]), JarLoader.class.getClassLoader());
             Thread.currentThread().setContextClassLoader(urlClassLoader);
-            System.out.println("Jars found:\n" + Arrays.toString(jarFiles));
+            System.out.println("Jars found:\n" + jarURLs);
         }
     }
 
