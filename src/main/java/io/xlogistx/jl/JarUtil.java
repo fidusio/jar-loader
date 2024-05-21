@@ -1,4 +1,4 @@
-package io.xlogistx;
+package io.xlogistx.jl;
 
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
@@ -11,47 +11,48 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.jar.Attributes;
 import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import java.util.stream.Stream;
 
-public class JarLoader {
+public class JarUtil
+{
 
-    public static final String JAR_PATTERN = ".*\\.jar$";
-    public static final String JAR_EXCLUDE = ".*-(javadoc|test|sources)\\.jar$";
-
-    public static void main(String[] args){
-        if (args.length < 2) {
-            System.err.println("Usage: java JarLoader <lib-directory> <main-class> [parmeters....]");
-            System.exit(1);
-        }
-
-        String libDir = args[0];
-        String mainClass = args[1];
-
-        try {
-            //jarsURLs(libDir);
-            // Extract and load JAR files
-            loadJars(libDir);
-
-            // Execute the main method of the specified class
-            executeMainClass(mainClass, args);
-        }
-        catch (Exception e)
+    public static class ExecConfig
+    {
+        public final Path tempDir;
+        public final String mainClass;
+        private ExecConfig(Path tempDir, String mainClass)
         {
-            e.printStackTrace();
+            this.tempDir = tempDir;
+            this.mainClass = mainClass;
         }
     }
 
 
+    public static final String JAR_PATTERN = ".*\\.jar$";
+    public static final String JAR_EXCLUDE = ".*-(javadoc|test|sources)\\.jar$";
+    public JarUtil(){}
+
+    public static String findMainClass(String jarFilePath) throws IOException {
+        try (JarFile jarFile = new JarFile(jarFilePath)) {
+            return findMainClass(jarFile);
+        }
+    }
 
 
-    private static Path extractLibDirectory(String libDir) throws IOException {
+    public static String findMainClass(JarFile  jarFile) throws IOException {
+        Manifest manifest = jarFile.getManifest();
+        Attributes mainAttributes = manifest.getMainAttributes();
+        return mainAttributes.getValue("Main-Class");
+    }
+
+
+    public static Path extractLibDirectory(String libDir) throws IOException {
 
         File jarDir = new File(libDir);
         if(jarDir.isDirectory())
@@ -81,7 +82,7 @@ public class JarLoader {
         return tempDir.toPath();
     }
 
-    private static Path extractLibDirectoryMemFS(String libDir) throws IOException {
+    public static Path extractLibDirectoryMemFS(String libDir) throws IOException {
 
         File jarDir = new File(libDir);
         if(jarDir.isDirectory())
@@ -119,7 +120,7 @@ public class JarLoader {
 
 
 
-    private static List<URL> listMatches(Path rootDir, String filterPattern, String filterExclusion)
+    public static List<URL> listMatches(Path rootDir, String filterPattern, String filterExclusion)
             throws IOException
     {
 
@@ -129,25 +130,46 @@ public class JarLoader {
             paths.filter(Files::isRegularFile)
                     .filter(path -> path.toString().matches(filterPattern) && !path.toString().matches(filterExclusion) && !path.toString().contains("jar-loader"))
                     .forEach(p ->
-                            {
-                                try
-                                {
-                                    ret.add(p.toUri().toURL());
-                                }
-                                catch (MalformedURLException e)
-                                {
-                                    e.printStackTrace();
-                                }
-                            });
+                    {
+                        try
+                        {
+                            ret.add(p.toUri().toURL());
+                        }
+                        catch (MalformedURLException e)
+                        {
+                            e.printStackTrace();
+                        }
+                    });
         }
 
         return ret;
     }
 
-    private static void loadJars(String libDirName)
+
+    public static void deleteDirectoryRecursively(Path path) throws IOException {
+        if (Files.isDirectory(path)) {
+            try (DirectoryStream<Path> entries = Files.newDirectoryStream(path)) {
+                for (Path entry : entries) {
+                    deleteDirectoryRecursively(entry);
+                }
+            }
+        }
+        System.out.println("delete: " + path);
+        Files.delete(path);
+    }
+
+    public static ExecConfig loadJars(boolean mem, String fatJarName, boolean extractMainClass)
             throws IOException
     {
-        List<URL> jarURLs = listMatches(extractLibDirectoryMemFS(libDirName), JAR_PATTERN, JAR_EXCLUDE);
+
+        Path fatJarPath  = mem ? extractLibDirectoryMemFS(fatJarName) : extractLibDirectory(fatJarName);
+        List<URL> jarURLs = listMatches(fatJarPath, JAR_PATTERN, JAR_EXCLUDE);
+        jarURLs.add(new File(fatJarName).toURI().toURL());
+        String mainClass = null;
+        if(extractMainClass)
+        {
+            mainClass = JarUtil.findMainClass(fatJarName);
+        }
 
         if(!jarURLs.isEmpty())
         {
@@ -155,16 +177,17 @@ public class JarLoader {
             Thread.currentThread().setContextClassLoader(urlClassLoader);
             //System.out.println("Jars found:\n" + jarURLs);
         }
+
+        return new ExecConfig(fatJarPath, mainClass);
     }
 
-    private static void executeMainClass(String mainClassName, String[] args)
+    public static void executeMainClass(String mainClassName, List<String> args)
             throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException
     {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Class<?> mainClass = classLoader.loadClass(mainClassName);
         Method mainMethod = mainClass.getMethod("main", String[].class);
-        String[] mainArgs = new String[args.length - 2];
-        System.arraycopy(args, 2, mainArgs, 0, mainArgs.length);
+        String[] mainArgs = args.toArray(new String[0]);
         mainMethod.invoke(null, (Object) mainArgs);
     }
 }
