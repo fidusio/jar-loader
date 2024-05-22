@@ -14,6 +14,7 @@ import java.net.URLClassLoader;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -125,10 +126,21 @@ public class JarUtil
     {
 
         List<URL> ret = new ArrayList<>();
+        Predicate<Path> composition;
+        Predicate<Path> pattern = p -> p.toString().matches(filterPattern);
+        if(filterExclusion != null && !filterExclusion.trim().isEmpty())
+        {
+            Predicate<Path> exclusion = p -> p.toString().matches(filterExclusion);
+            composition = pattern.and(exclusion.negate());
+        }
+        else
+        {
+            composition = pattern;
+        }
 
         try (Stream<Path> paths = Files.walk(rootDir)) {
             paths.filter(Files::isRegularFile)
-                    .filter(path -> path.toString().matches(filterPattern) && !path.toString().matches(filterExclusion) && !path.toString().contains("jar-loader"))
+                    .filter(composition)
                     .forEach(p ->
                     {
                         try
@@ -154,7 +166,7 @@ public class JarUtil
                 }
             }
         }
-        System.out.println("delete: " + path);
+
         Files.delete(path);
     }
 
@@ -175,7 +187,6 @@ public class JarUtil
         {
             URLClassLoader urlClassLoader = new URLClassLoader(jarURLs.toArray(new URL[0]), JarLoader.class.getClassLoader());
             Thread.currentThread().setContextClassLoader(urlClassLoader);
-            //System.out.println("Jars found:\n" + jarURLs);
         }
 
         return new ExecConfig(fatJarPath, mainClass);
