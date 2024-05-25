@@ -13,7 +13,7 @@
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven-shade-plugin.version>3.3.0</maven-shade-plugin.version>
-        <jimfs.version>1.3.0</jimfs.version>
+        <jimfs.version>RELEASE</jimfs.version>
     </properties>
 
 
