@@ -20,15 +20,13 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Stream;
 
-public class JarUtil
-{
+public class JarUtil {
 
-    public static class ExecConfig
-    {
+    public static class ExecConfig {
         public final Path tempDir;
         public final String mainClass;
-        private ExecConfig(Path tempDir, String mainClass)
-        {
+
+        private ExecConfig(Path tempDir, String mainClass) {
             this.tempDir = tempDir;
             this.mainClass = mainClass;
         }
@@ -37,7 +35,9 @@ public class JarUtil
 
     public static final String JAR_PATTERN = ".*\\.jar$";
     public static final String JAR_EXCLUDE = ".*-(javadoc|test|sources)\\.jar$";
-    public JarUtil(){}
+
+    public JarUtil() {
+    }
 
     public static String findMainClass(String jarFilePath) throws IOException {
         try (JarFile jarFile = new JarFile(jarFilePath)) {
@@ -46,7 +46,7 @@ public class JarUtil
     }
 
 
-    public static String findMainClass(JarFile  jarFile) throws IOException {
+    public static String findMainClass(JarFile jarFile) throws IOException {
         Manifest manifest = jarFile.getManifest();
         Attributes mainAttributes = manifest.getMainAttributes();
         return mainAttributes.getValue("Main-Class");
@@ -56,7 +56,7 @@ public class JarUtil
     public static Path extractLibDirectory(String libDir) throws IOException {
 
         File jarDir = new File(libDir);
-        if(jarDir.isDirectory())
+        if (jarDir.isDirectory())
             return jarDir.toPath();
 
 
@@ -75,7 +75,7 @@ public class JarUtil
                                 Files.copy(in, outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                             }
                         } catch (IOException ex) {
-                            System.err.println("Failed to extract " + e.getName() +" " + ex);
+                            System.err.println("Failed to extract " + e.getName() + " " + ex);
                         }
                     });
         }
@@ -86,7 +86,7 @@ public class JarUtil
     public static Path extractLibDirectoryMemFS(String libDir) throws IOException {
 
         File jarDir = new File(libDir);
-        if(jarDir.isDirectory())
+        if (jarDir.isDirectory())
             return jarDir.toPath();
 
         FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
@@ -94,14 +94,12 @@ public class JarUtil
         Files.createDirectories(path);
 
 
-
         //try (JarFile jarFile = new JarFile(new File(JarLoader.class.getProtectionDomain().getCodeSource().getLocation().getPath()))) {
         try (JarFile jarFile = new JarFile(new File(libDir))) {
             jarFile.stream()
                     .filter(e -> /*e.getName().startsWith(libDir + "/") &&*/ e.getName().endsWith(".jar"))
                     .forEach(e -> {
-                        try
-                        {
+                        try {
                             Path memFile = fs.getPath("/temp/" + e.getName());
                             Files.createDirectories(memFile.getParent());
                             Files.createFile(memFile);
@@ -120,21 +118,16 @@ public class JarUtil
     }
 
 
-
     public static List<URL> listMatches(Path rootDir, String filterPattern, String filterExclusion)
-            throws IOException
-    {
+            throws IOException {
 
         List<URL> ret = new ArrayList<>();
         Predicate<Path> composition;
         Predicate<Path> pattern = p -> p.toString().matches(filterPattern);
-        if(filterExclusion != null && !filterExclusion.trim().isEmpty())
-        {
+        if (filterExclusion != null && !filterExclusion.trim().isEmpty()) {
             Predicate<Path> exclusion = p -> p.toString().matches(filterExclusion);
             composition = pattern.and(exclusion.negate());
-        }
-        else
-        {
+        } else {
             composition = pattern;
         }
 
@@ -143,12 +136,9 @@ public class JarUtil
                     .filter(composition)
                     .forEach(p ->
                     {
-                        try
-                        {
+                        try {
                             ret.add(p.toUri().toURL());
-                        }
-                        catch (MalformedURLException e)
-                        {
+                        } catch (MalformedURLException e) {
                             e.printStackTrace();
                         }
                     });
@@ -171,20 +161,17 @@ public class JarUtil
     }
 
     public static ExecConfig loadJars(boolean mem, String fatJarName, boolean extractMainClass)
-            throws IOException
-    {
+            throws IOException {
 
-        Path fatJarPath  = mem ? extractLibDirectoryMemFS(fatJarName) : extractLibDirectory(fatJarName);
+        Path fatJarPath = mem ? extractLibDirectoryMemFS(fatJarName) : extractLibDirectory(fatJarName);
         List<URL> jarURLs = listMatches(fatJarPath, JAR_PATTERN, JAR_EXCLUDE);
         jarURLs.add(new File(fatJarName).toURI().toURL());
         String mainClass = null;
-        if(extractMainClass)
-        {
+        if (extractMainClass) {
             mainClass = JarUtil.findMainClass(fatJarName);
         }
 
-        if(!jarURLs.isEmpty())
-        {
+        if (!jarURLs.isEmpty()) {
             URLClassLoader urlClassLoader = new URLClassLoader(jarURLs.toArray(new URL[0]), JarLoader.class.getClassLoader());
             Thread.currentThread().setContextClassLoader(urlClassLoader);
         }
@@ -193,8 +180,7 @@ public class JarUtil
     }
 
     public static void executeMainClass(String mainClassName, List<String> args)
-            throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException
-    {
+            throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Class<?> mainClass = classLoader.loadClass(mainClassName);
         Method mainMethod = mainClass.getMethod("main", String[].class);

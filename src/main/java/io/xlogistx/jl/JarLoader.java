@@ -6,27 +6,26 @@ import java.util.List;
 public class JarLoader {
 
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         if (args.length < 2) {
             System.err.println("Usage: java JarLoader [-f] [-jar] <lib-directory> <main-class> [parmeters....]");
             System.exit(1);
         }
 
         List<String> argsList = new ArrayList<>();
-        for(String arg : args)
+        for (String arg : args)
             argsList.add(arg);
-
 
 
         boolean mem = !"-f".equals(argsList.get(0));
 
-        if(!mem) {
+        if (!mem) {
             argsList.remove(0);
         }
 
         boolean extractMainClass = "-jar".equals(argsList.get(0));
 
-        if(extractMainClass) {
+        if (extractMainClass) {
             argsList.remove(0);
         }
 
@@ -41,7 +40,7 @@ public class JarLoader {
             JarUtil.ExecConfig execConfig = JarUtil.loadJars(mem, fatJarPath, extractMainClass);
 
             // Execute the main method of the specified class
-            if(extractMainClass)
+            if (extractMainClass)
                 mainClass = execConfig.mainClass;
 
             System.out.println("Temp lib path: " + execConfig.tempDir.toUri().toURL());
@@ -64,16 +63,10 @@ public class JarLoader {
             JarUtil.executeMainClass(mainClass, argsList);
 
 
-
-
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
-
 
 
 }
