@@ -22,19 +22,23 @@ import java.util.stream.Stream;
 
 public class JarUtil {
 
+    public static final String JAR_DIR = "/tempLib";
     public static class ExecConfig {
         public final Path tempDir;
         public final String mainClass;
+        public final FileSystem fileSystem;
 
-        private ExecConfig(Path tempDir, String mainClass) {
+        private ExecConfig(Path tempDir, String mainClass, FileSystem fs) {
             this.tempDir = tempDir;
             this.mainClass = mainClass;
+            this.fileSystem = fs;
         }
     }
 
 
     public static final String JAR_PATTERN = ".*\\.jar$";
     public static final String JAR_EXCLUDE = ".*-(javadoc|test|sources)\\.jar$";
+    private static FileSystem currentFileSystem = null;
 
     public JarUtil() {
     }
@@ -58,9 +62,10 @@ public class JarUtil {
         File jarDir = new File(libDir);
         if (jarDir.isDirectory())
             return jarDir.toPath();
+        currentFileSystem = FileSystems.getDefault();
 
 
-        File tempDir = Files.createTempDirectory("tempLib").toFile();
+        File tempDir = Files.createTempDirectory(JAR_DIR).toFile();
         tempDir.deleteOnExit();
 
         //try (JarFile jarFile = new JarFile(new File(JarLoader.class.getProtectionDomain().getCodeSource().getLocation().getPath()))) {
@@ -90,7 +95,8 @@ public class JarUtil {
             return jarDir.toPath();
 
         FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
-        Path path = fs.getPath("/temp");
+        currentFileSystem = fs;
+        Path path = fs.getPath(JAR_DIR);
         Files.createDirectories(path);
 
 
@@ -100,7 +106,7 @@ public class JarUtil {
                     .filter(e -> /*e.getName().startsWith(libDir + "/") &&*/ e.getName().endsWith(".jar"))
                     .forEach(e -> {
                         try {
-                            Path memFile = fs.getPath("/temp/" + e.getName());
+                            Path memFile = fs.getPath(JAR_DIR + "/" + e.getName());
                             Files.createDirectories(memFile.getParent());
                             Files.createFile(memFile);
 
@@ -176,7 +182,7 @@ public class JarUtil {
             Thread.currentThread().setContextClassLoader(urlClassLoader);
         }
 
-        return new ExecConfig(fatJarPath, mainClass);
+        return new ExecConfig(fatJarPath, mainClass, currentFileSystem);
     }
 
     public static void executeMainClass(String mainClassName, List<String> args)

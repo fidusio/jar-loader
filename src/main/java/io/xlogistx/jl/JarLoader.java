@@ -1,5 +1,7 @@
 package io.xlogistx.jl;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,7 +11,7 @@ public class JarLoader {
     public static void main(String[] args) {
         if (args.length < 2) {
             System.err.println("Usage: java JarLoader [-f] [-jar] <lib-directory> <main-class> [parmeters....]");
-            System.exit(1);
+            System.exit(-1);
         }
 
         List<String> argsList = new ArrayList<>();
@@ -59,7 +61,23 @@ public class JarLoader {
 //                }));
 //            }
 
+            try
+            {
 
+                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+
+                Class<?> clazz = classLoader.loadClass("org.zoxweb.shared.util.ResourceManager");
+                Field singleton = clazz.getDeclaredField("SINGLETON");
+                Object resourceManager = singleton.get(null);
+                Method register = clazz.getMethod("register", Object.class, Object.class);
+                register.invoke(resourceManager, "FileSystem", execConfig.fileSystem);
+                System.out.println("FileSystem injected");
+
+            }
+            catch (Exception e)
+            {
+                System.err.println("Loading resource manager failed");
+            }
             JarUtil.executeMainClass(mainClass, argsList);
 
 
