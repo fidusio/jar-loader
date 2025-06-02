@@ -3,37 +3,43 @@ package io.xlogistx.jl;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.*;
+import java.nio.file.FileSystem;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.jar.Attributes;
-import java.util.jar.JarFile;
-import java.util.jar.Manifest;
+import java.util.jar.*;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class JarUtil {
 
     public static final String JAR_DIR = "/tempLib";
+
     public static class ExecConfig {
         public final Path tempDir;
         public final String mainClass;
         public final FileSystem fileSystem;
+        public final URLClassLoader mainClassLoader;
 
-        private ExecConfig(Path tempDir, String mainClass, FileSystem fs) {
+        private ExecConfig(Path tempDir, String mainClass, FileSystem fs, URLClassLoader classLoader) {
             this.tempDir = tempDir;
             this.mainClass = mainClass;
             this.fileSystem = fs;
+            this.mainClassLoader = classLoader;
         }
     }
+
+
+    private static FileSystem JIMFS = null;
 
 
     public static final String JAR_PATTERN = ".*\\.jar$";
@@ -57,6 +63,10 @@ public class JarUtil {
     }
 
 
+    public static FileSystem getJIMFS() {
+        return JIMFS;
+    }
+
     public static Path extractLibDirectory(String libDir) throws IOException {
 
         File jarDir = new File(libDir);
@@ -65,7 +75,7 @@ public class JarUtil {
         currentFileSystem = FileSystems.getDefault();
 
 
-        File tempDir = Files.createTempDirectory(JAR_DIR).toFile();
+        File tempDir = Files.createTempDirectory("temp").toFile();
         tempDir.deleteOnExit();
 
         //try (JarFile jarFile = new JarFile(new File(JarLoader.class.getProtectionDomain().getCodeSource().getLocation().getPath()))) {
@@ -96,6 +106,7 @@ public class JarUtil {
 
         FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
         currentFileSystem = fs;
+        JIMFS = fs;
         Path path = fs.getPath(JAR_DIR);
         Files.createDirectories(path);
 
@@ -106,9 +117,11 @@ public class JarUtil {
                     .filter(e -> /*e.getName().startsWith(libDir + "/") &&*/ e.getName().endsWith(".jar"))
                     .forEach(e -> {
                         try {
-                            Path memFile = fs.getPath(JAR_DIR + "/" + e.getName());
+                            String pathName = JAR_DIR + "/" + e.getName();
+                            Path memFile = fs.getPath(pathName);
                             Files.createDirectories(memFile.getParent());
                             Files.createFile(memFile);
+
 
                             try (InputStream in = jarFile.getInputStream(e)) {
                                 Files.copy(in, memFile, StandardCopyOption.REPLACE_EXISTING);
@@ -120,7 +133,77 @@ public class JarUtil {
                     });
         }
 
+
+//        try (JarFile jarFile = new JarFile(new File(libDir))) {
+//            Path dest = fs.getPath("/html");
+//            Files.createDirectories(dest.getFileName());
+//            copyHtmlFromJar(jarFile, "html/", dest);
+//        }
+
         return path;
+    }
+
+    public static void zipISToOutputPath(ZipInputStream zis, Path outputPath) throws IOException {
+        try {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                Path entryPath = outputPath.resolve(entry.getName());
+                if (entry.isDirectory()) {
+                    Files.createDirectories(entryPath);
+                } else {
+                    Files.createDirectories(entryPath.getParent());
+                    try (OutputStream out = Files.newOutputStream(entryPath)) {
+                        byte[] buffer = new byte[4096];
+                        int len;
+                        while ((len = zis.read(buffer)) != -1) {
+                            out.write(buffer, 0, len);
+                        }
+                    }
+                }
+                zis.closeEntry();
+            }
+        } finally {
+            zis.close();
+
+        }
+    }
+
+    public static ZipInputStream convertISToZip(InputStream is)
+            throws IOException {
+        try {
+            if(is instanceof ByteArrayInputStream)
+                return new ZipInputStream(is);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = is.read(buffer)) != -1) {
+                baos.write(buffer, 0, read);
+            }
+            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+            return new ZipInputStream(bais);
+        } finally {
+            if (!(is instanceof ByteArrayInputStream) && is != null)
+                is.close();
+        }
+    }
+
+    public static JarInputStream convertISToJar(InputStream is)
+            throws IOException {
+        try {
+            if(is instanceof ByteArrayInputStream)
+                return new JarInputStream(is);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = is.read(buffer)) != -1) {
+                baos.write(buffer, 0, read);
+            }
+            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+            return new JarInputStream(bais);
+        } finally {
+            if (!(is instanceof ByteArrayInputStream) && is != null)
+                is.close();
+        }
     }
 
 
@@ -177,12 +260,13 @@ public class JarUtil {
             mainClass = JarUtil.findMainClass(fatJarName);
         }
 
+        URLClassLoader urlClassLoader = null;
         if (!jarURLs.isEmpty()) {
-            URLClassLoader urlClassLoader = new URLClassLoader(jarURLs.toArray(new URL[0]), JarLoader.class.getClassLoader());
+            urlClassLoader = new URLClassLoader(jarURLs.toArray(new URL[0]), JarLoader.class.getClassLoader());
             Thread.currentThread().setContextClassLoader(urlClassLoader);
         }
 
-        return new ExecConfig(fatJarPath, mainClass, currentFileSystem);
+        return new ExecConfig(fatJarPath, mainClass, currentFileSystem, urlClassLoader);
     }
 
     public static void executeMainClass(String mainClassName, List<String> args)
@@ -193,4 +277,77 @@ public class JarUtil {
         String[] mainArgs = args.toArray(new String[0]);
         mainMethod.invoke(null, (Object) mainArgs);
     }
+
+
+    public static void printFileSystem(FileSystem fs) throws IOException {
+        for (Path root : fs.getRootDirectories()) {
+            Files.walk(root)
+                    .forEach(path -> {
+                        Path relPath = root.relativize(path);
+                        String display = relPath.toString().isEmpty() ? root.toString() : relPath.toString();
+                        JarLoader.print(display);
+                    });
+        }
+    }
+
+    public static String toStringFileSystem(FileSystem fs) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        for (Path root : fs.getRootDirectories()) {
+            Files.walk(root)
+                    .forEach(path -> {
+                        Path relPath = root.relativize(path);
+                        sb.append(relPath.toString().isEmpty() ? root.toString() : relPath.toString());
+                        sb.append("\n");
+
+                    });
+        }
+        return sb.toString();
+    }
+
+    public static void copyHtmlFromJar(JarFile fromJar, String jarResourceDir, Path targetDir) throws IOException {
+        if (!jarResourceDir.endsWith("/")) {
+            jarResourceDir += "/";
+        }
+
+        Enumeration<JarEntry> entries = fromJar.entries();
+        while (entries.hasMoreElements()) {
+            JarEntry entry = entries.nextElement();
+            String entryName = entry.getName();
+            if (entryName.startsWith(jarResourceDir)) {
+                String relativePath = entryName.substring(jarResourceDir.length());
+                if (relativePath.isEmpty()) continue; // Skip the directory itself
+
+                Path outPath = targetDir.resolve(relativePath);
+
+                if (entry.isDirectory()) {
+                    Files.createDirectories(outPath);
+                } else {
+                    Files.createDirectories(outPath.getParent());
+                    try (InputStream is = fromJar.getInputStream(entry)) {
+                        Files.copy(is, outPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                }
+            }
+        }
+    }
+
+
+    public static void copyJarContent(JarFile jarFile, Path targetDir) throws IOException {
+        Enumeration<JarEntry> entries = jarFile.entries();
+        while (entries.hasMoreElements()) {
+            JarEntry entry = entries.nextElement();
+            String entryName = entry.getName();
+            Path outPath = targetDir.resolve(entryName);
+
+            if (entry.isDirectory()) {
+                Files.createDirectories(outPath);
+            } else {
+                Files.createDirectories(outPath.getParent());
+                try (InputStream is = jarFile.getInputStream(entry)) {
+                    Files.copy(is, outPath, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+        }
+    }
+
 }

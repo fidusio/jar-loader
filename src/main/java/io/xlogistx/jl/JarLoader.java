@@ -7,6 +7,15 @@ import java.util.List;
 
 public class JarLoader {
 
+    public  static void print(String str)
+    {
+        System.out.println("***** JarLoader ***** " + str);
+    }
+
+    public static void error(String str)
+    {
+        System.err.println("***** JarLoader ***** " + str);
+    }
 
     public static void main(String[] args) {
         if (args.length < 2) {
@@ -45,8 +54,8 @@ public class JarLoader {
             if (extractMainClass)
                 mainClass = execConfig.mainClass;
 
-            System.out.println("Temp lib path: " + execConfig.tempDir.toUri().toURL());
-            System.out.println("Running: " + mainClass + " " + argsList);
+            print("Temp lib path: " + execConfig.tempDir.toUri().toURL());
+            print("Running: " + mainClass + " " + argsList);
 
 
             // if using temp file system
@@ -64,20 +73,24 @@ public class JarLoader {
             try
             {
 
-                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
-                Class<?> clazz = classLoader.loadClass("org.zoxweb.shared.util.ResourceManager");
+
+                Class<?> clazz = execConfig.mainClassLoader.loadClass("org.zoxweb.shared.util.ResourceManager");
                 Field singleton = clazz.getDeclaredField("SINGLETON");
                 Object resourceManager = singleton.get(null);
                 Method register = clazz.getMethod("register", Object.class, Object.class);
                 register.invoke(resourceManager, "FileSystem", execConfig.fileSystem);
-                System.out.println("FileSystem injected");
+                print("FileSystem injected");
 
             }
             catch (Exception e)
             {
-                System.err.println("Loading resource manager failed");
+                error("Loading resource manager failed");
             }
+
+            if(execConfig.fileSystem == JarUtil.getJIMFS())
+                JarUtil.printFileSystem(execConfig.fileSystem);
+
             JarUtil.executeMainClass(mainClass, argsList);
 
 
