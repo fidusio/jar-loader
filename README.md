@@ -50,3 +50,15 @@ app-fat.jar
 <li>Locate the main-class
 <li>Invoke main-class.main(parameters...) 
 </ol>
+
+## Where to get jar-loader.jar
+You can download [jar-loader.jar](https://xlogistx.io/apps/jar-loader.jar)
+<br />
+<pre>
+File info:
+{
+  "filename": "jar-loader.jar",
+  "length": 3285118,
+  "sha-256": "48C773ECA61EA4CA120D47372A7394C5A04EF648AC6DE0EA63F363FB42240599"
+}
+</pre>
