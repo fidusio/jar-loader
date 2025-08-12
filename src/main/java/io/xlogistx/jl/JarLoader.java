@@ -8,16 +8,15 @@ import java.util.List;
 
 public class JarLoader {
 
-    public  static void print(String str)
-    {
+    public static void print(String str) {
         System.out.println("***** JarLoader ***** " + str);
     }
 
-    public static void error(String str)
-    {
+    public static void error(String str) {
         System.err.println("***** JarLoader ***** " + str);
     }
-    public static final String APP_VERSION="1.0.0";
+
+    public static final String APP_VERSION = "1.0.0";
 
     public static void main(String[] args) {
         if (args.length < 2) {
@@ -77,9 +76,7 @@ public class JarLoader {
 //                }));
 //            }
 
-            try
-            {
-
+            try {
 
 
                 Class<?> clazz = execConfig.mainClassLoader.loadClass("org.zoxweb.shared.util.ResourceManager");
@@ -89,14 +86,13 @@ public class JarLoader {
                 register.invoke(resourceManager, "FileSystem", execConfig.fileSystem);
                 print("FileSystem injected");
 
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 error("Loading resource manager failed");
             }
 
-            if(execConfig.fileSystem == JarUtil.getJIMFS())
+            if (execConfig.fileSystem == JarUtil.getJIMFS())
                 JarUtil.printFileSystem(execConfig.fileSystem);
+
 
             JarUtil.executeMainClass(mainClass, argsList);
 

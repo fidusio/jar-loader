@@ -36,6 +36,7 @@ public class JarUtil {
             this.fileSystem = fs;
             this.mainClassLoader = classLoader;
         }
+
     }
 
 
@@ -171,7 +172,7 @@ public class JarUtil {
     public static ZipInputStream convertISToZip(InputStream is)
             throws IOException {
         try {
-            if(is instanceof ByteArrayInputStream)
+            if (is instanceof ByteArrayInputStream)
                 return new ZipInputStream(is);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] buffer = new byte[4096];
@@ -190,7 +191,7 @@ public class JarUtil {
     public static JarInputStream convertISToJar(InputStream is)
             throws IOException {
         try {
-            if(is instanceof ByteArrayInputStream)
+            if (is instanceof ByteArrayInputStream)
                 return new JarInputStream(is);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] buffer = new byte[4096];

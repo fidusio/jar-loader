@@ -58,7 +58,7 @@ You can download [jar-loader.jar](https://xlogistx.io/apps/jar-loader.jar)
 File info:
 {
   "filename": "jar-loader.jar",
-  "length": 3285118,
-  "sha-256": "48C773ECA61EA4CA120D47372A7394C5A04EF648AC6DE0EA63F363FB42240599"
+  "length": 3285121,
+  "sha-256": "C2DBCA1EFF8C2FF6FFF9EFF685ECF20650B001290E8683E531A007D3F55801AA"
 }
 </pre>
