@@ -12,12 +12,16 @@ Type: <strong>java -jar jar-loader.jar</strong>
 <li><strong>[parameters]</strong>: if required by the main-class.
 </ul>
 
-Example: <strong>java -jar jar-loader.jar -jar xlogistx-fat-jar-with-dependencies.jar http-server-config.json</strong>
+Examples:
+<ul>
+<li>Executing a jar: <strong>java -jar jar-loader.jar -jar xlogistx-fat-jar-with-dependencies.jar http-server-config.json</strong>
+<li>Executing a class: <strong>java -jar jar-loader.jar xlogistx-fat-jar-with-dependencies.jar io.xlogistx.http.NIOHTTPServer http-server-config.json</strong>
+</ul>
 
 ## The fat jar content
 
 <pre>
-app-fat.jar
+acme-app-fat.jar
 ├── META-INF/
 │   └── MANIFEST.MF
 ├── com/
@@ -58,7 +62,7 @@ You can download [jar-loader.jar](https://xlogistx.io/apps/jar-loader.jar)
 File info:
 {
   "filename": "jar-loader.jar",
-  "length": 3285121,
-  "sha-256": "C2DBCA1EFF8C2FF6FFF9EFF685ECF20650B001290E8683E531A007D3F55801AA"
+  "length": 3285116,
+  "sha-256": "1BEBC06B9D018F6617655E341AF5479AD3249BEFBD6FDF49489234E4218B4610"
 }
 </pre>

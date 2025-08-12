@@ -20,14 +20,14 @@ public class JarLoader {
 
     public static void main(String[] args) {
         if (args.length < 2) {
-//            System.err.println("***** jar-loader version " + APP_VERSION + " *****\n");
-            System.err.println("Usage:\t\tjava -jar jar-loader.jar [-f] [-jar] <app-fat.jar> [main-class] [parameters...]");
-            System.err.println("[-f]:\t\tif specified expand the jar files inside app-fat.jar in a temp dir of the file system" +
-                    "\n\t\tif omitted will use jimfs(in memory).");
-            System.err.println("[-jar]:\t\tif the app-fat.jar has a main-class.");
-            System.err.println("[main-class]:\trequired if [-jar] was omitted.");
-            System.err.println("[parameters]\tif required by the main-class.");
-            System.err.println("\n\njar-loader version " + APP_VERSION);
+            System.err.println("*** jar-loader version " + APP_VERSION + " ***");
+            System.err.println("Usage: java -jar jar-loader.jar [-f] [-jar] <app-fat.jar> [main-class] [parameters...]");
+            System.err.println("[-f]: if specified expand the jar files inside app-fat.jar in a temp dir of the file system, " +
+                    "if omitted will use jimfs(in memory).");
+            System.err.println("[-jar]: if the app-fat.jar has a main-class.");
+            System.err.println("[main-class]: required if [-jar] was omitted.");
+            System.err.println("[parameters]: if required by the main-class.");
+
             System.exit(-1);
         }
 
