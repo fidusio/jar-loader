@@ -16,7 +16,7 @@ public class JarLoader {
         System.err.println("***** JarLoader ***** " + str);
     }
 
-    public static final String APP_VERSION = "1.0.0";
+    public static final String APP_VERSION = "1.0.1";
 
     public static void main(String[] args) {
         if (args.length < 2) {
