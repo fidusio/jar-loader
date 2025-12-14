@@ -1,7 +1,10 @@
 ## jar-loader
-A java jar loader that expand a fat java jar file containing jars and classes then execute a main-class with its parameters
+
+A java jar loader that expand a fat java jar file containing jars and classes then execute a main-class with its
+parameters
 
 ## Usage
+
 Type: <strong>java -jar jar-loader.jar</strong>
 <ul>
 <li><strong>java -jar jar-loader.jar [-f] [-jar] &lt;app-fat.jar&gt; [main-class] [parameters...]</strong>
@@ -47,6 +50,7 @@ acme-app-fat.jar
 </pre>
 
 ## How does it work
+
 <ol>
 <li>The jar-loader will open the fat jar search all the files that ends with .jar expand them into the file system
 <li>Load all the jar(s) into the class loader
@@ -56,13 +60,14 @@ acme-app-fat.jar
 </ol>
 
 ## Where to get jar-loader.jar
-You can download version 1.1.0 [jar-loader.jar](https://xlogistx.io/apps/jar-loader.jar)
+
+You can download version 1.1.1 [jar-loader.jar](https://xlogistx.io/apps/jar-loader.jar)
 <br />
 <pre>
 File info:
 {
   "filename": "jar-loader.jar",
-  "length": 3285155,
-  "sha-256": "205EB2EA379E6C8854FFDA542DAF3F23A5FD0E962B0E7E0D3B5397720F4BF72C"
+  "data-length": 3285191,
+  "sha-256": "6208DBBB56E090456D31A4C1EAF1C41BD5C5268DCA2632E6D7746B9D4D4802A3"
 }
 </pre>

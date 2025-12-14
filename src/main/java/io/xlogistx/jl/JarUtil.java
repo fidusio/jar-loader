@@ -1,5 +1,6 @@
 package io.xlogistx.jl;
 
+
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 
@@ -19,7 +20,9 @@ import java.util.jar.*;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
+/**
+ * Utility helper class for the jar loader
+ */
 public class JarUtil {
 
     public static final String JAR_DIR = "/tempLib";
