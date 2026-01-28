@@ -68,7 +68,7 @@ You can download version 1.1.2 [jar-loader.jar](https://xlogistx.io/apps/jar-loa
 File info:
 {
   "filename": "jar-loader.jar",
-  "data-length": 3285529,
-  "sha-256": "B0BE38EB7C243FDDD13BE6EA42899938400B1A12CA445FB4A8C889D7AC787FF9"
+  "data-length": 3285562,
+  "sha-256": "4AA9137FA6F6482D45C3085E0759A9F7BF94D87E7BBFCE946CFDF12AF90A5FD6"
 }
 </pre>

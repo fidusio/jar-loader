@@ -33,20 +33,24 @@ public class JarLoader {
 
             System.exit(-1);
         }
+        String jlvvv = System.getProperty("jlvvv");
+        if (jlvvv == null)
+            jlvvv = System.getenv("jlvvv");
 
-        if (System.getProperty("jlvvv") != null) {
-            String vvv = System.getProperty("jlvvv");
-            if (vvv != null) {
-                vvv = vvv.toLowerCase().trim();
-                switch (vvv) {
-                    case "on":
-                    case "true":
-                    case "yes":
-                        JarUtil.DEBUG = true;
-                        break;
-                }
+        print("jlvvv=" + jlvvv);
+
+
+        if (jlvvv != null) {
+            jlvvv = jlvvv.toLowerCase().trim();
+            switch (jlvvv) {
+                case "on":
+                case "true":
+                case "yes":
+                    JarUtil.DEBUG = true;
+                    break;
             }
         }
+
 
         List<String> argsList = new ArrayList<>();
         Collections.addAll(argsList, args);
