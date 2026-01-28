@@ -7,7 +7,8 @@ parameters
 
 Type: <strong>java -jar jar-loader.jar</strong>
 <ul>
-<li><strong>java -jar jar-loader.jar [-f] [-jar] &lt;app-fat.jar&gt; [main-class] [parameters...]</strong>
+<li><strong>java [-Djlvvv=on] -jar jar-loader.jar [-f] [-jar] &lt;app-fat.jar&gt; [main-class] [parameters...]</strong>
+<li><strong>[-Djlvvv=on]: output more verbose</strong>
 <li><strong>[-f]</strong>: if specified expand the jar files inside app-fat.jar in a temp dir of the file system if omitted will use jimfs(in memory file system).
 <li><strong>app-fat.jar</strong>: the required jar file that contain all the .class(es) and jars required by the app.
 <li><strong>[-jar]</strong>: if the app-fat.jar has a main-class.
@@ -61,13 +62,13 @@ acme-app-fat.jar
 
 ## Where to get jar-loader.jar
 
-You can download version 1.1.1 [jar-loader.jar](https://xlogistx.io/apps/jar-loader.jar)
+You can download version 1.1.2 [jar-loader.jar](https://xlogistx.io/apps/jar-loader.jar)
 <br />
 <pre>
 File info:
 {
   "filename": "jar-loader.jar",
-  "data-length": 3285191,
-  "sha-256": "6208DBBB56E090456D31A4C1EAF1C41BD5C5268DCA2632E6D7746B9D4D4802A3"
+  "data-length": 3285529,
+  "sha-256": "B0BE38EB7C243FDDD13BE6EA42899938400B1A12CA445FB4A8C889D7AC787FF9"
 }
 </pre>

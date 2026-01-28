@@ -26,6 +26,7 @@ import java.util.zip.ZipInputStream;
 public class JarUtil {
 
     public static final String JAR_DIR = "/tempLib";
+    public static boolean DEBUG = false;
 
     public static class ExecConfig {
         public final Path tempDir;

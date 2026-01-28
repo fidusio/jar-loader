@@ -16,14 +16,15 @@ public class JarLoader {
         System.err.println("***** JarLoader ***** " + str);
     }
 
-    public static final String APP_VERSION = "1.1.1";
+    public static final String APP_VERSION = "1.1.2";
 
 
     private static void execProgram(String[] args)
             throws Exception {
         if (args.length < 2) {
             System.err.println("*** jar-loader version " + APP_VERSION + " ***");
-            System.err.println("Usage: java -jar jar-loader.jar [-f] [-jar] <app-fat.jar> [main-class] [parameters...]");
+            System.err.println("Usage: java [-Djlvvv=on] -jar jar-loader.jar [-f] [-jar] <app-fat.jar> [main-class] [parameters...]");
+            System.err.println("[-Djlvvv=on]: output more verbose");
             System.err.println("[-f]: if specified expand the jar files inside app-fat.jar in a temp dir of the file system, " +
                     "if omitted will use jimfs(in memory).");
             System.err.println("[-jar]: if the app-fat.jar has a main-class.");
@@ -31,6 +32,20 @@ public class JarLoader {
             System.err.println("[parameters]: if required by the main-class.");
 
             System.exit(-1);
+        }
+
+        if (System.getProperty("jlvvv") != null) {
+            String vvv = System.getProperty("jlvvv");
+            if (vvv != null) {
+                vvv = vvv.toLowerCase().trim();
+                switch (vvv) {
+                    case "on":
+                    case "true":
+                    case "yes":
+                        JarUtil.DEBUG = true;
+                        break;
+                }
+            }
         }
 
         List<String> argsList = new ArrayList<>();
@@ -89,7 +104,7 @@ public class JarLoader {
         }
 
         // if we are using Java In Memory File System
-        if (execConfig.fileSystem == JarUtil.getJIMFS())
+        if (execConfig.fileSystem == JarUtil.getJIMFS() && JarUtil.DEBUG)
             JarUtil.printFileSystem(execConfig.fileSystem);
 
         // run the program
