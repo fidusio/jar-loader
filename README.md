@@ -70,6 +70,6 @@ File info:
 {
   "filename": "jar-loader.jar",
   "data-length": 3285584,
-  "sha-256": "3C8190DA199DF7AE3F7E7D2365DC9C18DC89647BF11C86B911C2B2474D04F292"
+  "sha-256": "f99bb03cf9e3d9e546448a66cb1dddd6d89380f69b9ce0192cfe31de10646bc3"
 }
 ```
