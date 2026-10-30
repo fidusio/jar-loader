@@ -62,7 +62,7 @@ acme-app-fat.jar
 
 ## Where to get jar-loader.jar
 
-You can download version 1.1.3 [jar-loader.jar](https://xlogistx.io/apps/jar-loader.jar)
+You can download version 1.1.4 [jar-loader.jar](https://xlogistx.io/apps/jar-loader.jar)
 <br />
 
 File info:
@@ -70,6 +70,6 @@ File info:
 {
   "filename": "jar-loader.jar",
   "data-length": 3285584,
-  "sha-256": "4dd2a62dd9b659b3f9acde3141333b88e70896496643d604351ffa0c5bbd750f"
+  "sha-256": "1bda611ed65ae8b6ca04b18aa05fb165ef364cae18c1382a76c7ba807aca2f19"
 }
 ```
